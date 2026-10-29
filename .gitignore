@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+tests/e2e/screenshots/
+.venv/
+desktop.ini
+.DS_Store

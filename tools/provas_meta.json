@@ -1,0 +1,59 @@
+{
+ "2005": {
+  "observacao": "Caderno único da área de Computação. Foram mantidas apenas as questões da prova de Ciência da Computação: Formação Geral (1 a 10), núcleo comum CC/EC (41 a 55) e específicas de CC (56 a 70).",
+  "padroes_texto": {
+   "8": {
+    "oficial": true,
+    "fonte": "INEP – Formação Geral ENADE 2005, Padrão de Respostas (Questão 1 da Formação Geral)",
+    "html": "<p>Nas questões discursivas da Formação Geral são consideradas a adequação ao tema, a coerência, a coesão e a observância do padrão culto da língua.</p><p>O estudante deverá, em no máximo 10 linhas, apresentar uma <strong>proposta de preservação da Floresta Amazônica</strong>, fundamentada em <strong>dois argumentos</strong> coerentes com a proposta e coerentes entre si. Pode usar os textos apresentados, articulando-os, ou usá-los como estímulo.</p><p>A proposta deve garantir pelo menos uma das três possibilidades: a <em>proteção</em>, a <em>recuperação</em> ou a <em>sustentabilidade</em> da floresta.</p><p>Possíveis encaminhamentos:</p><ol><li>Articulação entre os aspectos ecológico e econômico da preservação da Amazônia.</li><li>A Amazônia é uma das principais riquezas naturais do país; internacionalizá-la é romper com a soberania nacional.</li><li>A floresta é tão importante para o Brasil quanto para o mundo e, como o país não tem conseguido preservá-la, a internacionalização tornou-se uma necessidade.</li><li>Adotar uma política de autossustentabilidade que valorize a produção para a sobrevivência e a geração de riquezas sem destruir as árvores.</li><li>Reflorestar o que foi destruído, sobretudo a vegetação dos mananciais hídricos.</li><li>Criar condições para que a população da floresta sobreviva dignamente com os recursos da região.</li><li>Propor políticas ambientais em parceria público-privada para aproveitar o potencial da região.</li><li>Despertar a consciência ecológica da população local / desenvolver o turismo ecológico.</li><li>Promover, em todo o país, campanhas em defesa da Floresta Amazônica.</li><li>Criar incentivos financeiros para quem cumprir a legislação ambiental.</li></ol><p>(valor: 10,0 pontos)</p>"
+   },
+   "9": {
+    "oficial": true,
+    "fonte": "INEP – Formação Geral ENADE 2005, Padrão de Respostas (Questão 2 da Formação Geral)",
+    "html": "<p><strong>a)</strong> Poderá ser apresentada uma das conclusões (5,0 pontos):</p><ul><li>O Brasil tem um número absoluto alto de internautas (22,3 milhões em 2004, 10ª posição mundial), mas isso representa pequena parcela da população: em 2003 havia menos de 1 internauta para cada 10 habitantes.</li><li>O Brasil reflete um panorama global de desigualdade no acesso às novas tecnologias, caracterizando exclusão digital considerável: em números absolutos é o 10º país, mas em números relativos mais de 80% dos brasileiros ainda não têm acesso à Internet.</li><li>Leitura comparativa dos países do gráfico, considerando valores absolutos e relativos (tamanho da população).</li></ul><p><strong>b)</strong> Poderá ser apresentada uma das conclusões (5,0 pontos):</p><ul><li>Com as novas tecnologias, o desemprego estrutural é uma realidade, reduzindo postos de trabalho e exigindo pessoas preparadas para usá-las.</li><li>A pequena oferta de trabalho desloca pessoas com boa educação formal, mas sem preparo para as novas tecnologias, para atividades de baixa qualificação.</li><li>A camada mais pobre da população enfrenta mais um obstáculo para uma vida digna: a exclusão digital.</li><li>Não ter acesso à rede significa mais dificuldade para conseguir emprego e perda de aspectos primordiais da cidadania; dominar recursos básicos de informática torna-se exigência para ingressar no mercado de trabalho.</li><li>Além da exigência de qualificação tecnológica, a discriminação da mulher no mercado de trabalho é facilitada pelo desemprego estrutural, colocando-a em situação subalterna mesmo com bom nível de educação formal.</li></ul>"
+   },
+   "10": {
+    "oficial": true,
+    "fonte": "INEP – Formação Geral ENADE 2005, Padrão de Respostas (Questão 3 da Formação Geral)",
+    "html": "<p>Uma sugestão é a <strong>repressão ao desmatamento</strong>, especialmente o feito por queimadas, garantindo que as florestas mantenham ou ampliem suas dimensões atuais para restabelecer a emissão de oxigênio na atmosfera e garantir o equilíbrio do regime de chuvas. (5,0 pontos)</p><p>A outra é o <strong>controle da emissão de gases poluentes</strong> de automóveis e indústrias, especialmente os de origem fóssil, com o objetivo de minimizar o efeito estufa, um dos fatores que contribuem para o aquecimento global. (5,0 pontos)</p>"
+   },
+   "55": {
+    "oficial": false,
+    "fonte": "Resposta esperada elaborada para este simulado (padrão oficial do INEP não localizado)",
+    "html": "<p><strong>a)</strong> O uso da cache é vantajoso quando o programa apresenta <strong>localidade de referência</strong>:</p><ul><li><em>Localidade temporal</em>: os mesmos dados/instruções são reutilizados em pouco tempo (laços, variáveis acessadas repetidamente, sub-rotinas chamadas com frequência).</li><li><em>Localidade espacial</em>: acessos a endereços próximos (percurso sequencial de vetores e matrizes na ordem de armazenamento, execução sequencial de instruções).</li><li><em>Conjunto de trabalho</em> pequeno o bastante para caber na cache, o que gera alta taxa de acerto.</li></ul><p><strong>b)</strong></p><ul><li><strong>Registradores e cache com o mesmo tempo de acesso: ainda haveria vantagem.</strong> A cache continua bem mais rápida que a memória principal e tem capacidade muito maior que o pequeno conjunto de registradores. Ela reduz o número de acessos à memória principal, que é o que de fato degrada o desempenho; a vantagem da cache se mede em relação ao nível abaixo dela.</li><li><strong>Cache e memória principal com o mesmo tempo de acesso: não haveria vantagem.</strong> A cache existe para esconder a latência da memória principal. Com tempos iguais, um acerto na cache não economiza tempo, e a cache só acrescentaria custo, complexidade (controle, coerência, substituição) e o tempo de verificação de falha.</li></ul>"
+   },
+   "70": {
+    "oficial": false,
+    "fonte": "Orientação de resposta elaborada para este simulado (padrão oficial do INEP não localizado)",
+    "html": "<p><strong>Ideia central.</strong> A MFE dada reconhece as <em>unidades</em> (1 a 9) com os símbolos I, V e X. Para estender o intervalo, antepõe-se à MFE das unidades uma estrutura que reconhece as <em>dezenas</em> (e, no item b, as <em>centenas</em>). A regra de formação dos algarismos romanos se repete em cada ordem de grandeza: (I, V, X) para as unidades, (X, L, C) para as dezenas e (C, D, M) para as centenas.</p><p><strong>a) 1 a 20 (até 8 estados).</strong> Criar um novo estado inicial com transição em <strong>X</strong> para um estado (final) que reconhece 10, com no máximo mais uma transição em X (XX = 20). Desse estado, e também do novo estado inicial, partem as mesmas transições em I e V que saíam do estado inicial original. Assim se reaproveitam os estados das unidades: X, XI…XIX, XX. A notação <em>n</em> (número máximo de transições no estado) limita a repetição de X a duas vezes e de I a três.</p><p><strong>b) 1 a 500 (até 8 estados).</strong> Reconhecer primeiro as centenas: C, CC, CCC, CD e D (500, sem nada depois). Em seguida, as dezenas: X, XX, XXX, XL, L, LX…LXXX, XC. Por fim, as unidades, usando a MFE original. Para caber em 8 estados, os estados que reconhecem dezenas e unidades seguem o mesmo padrão e trocam apenas os símbolos (X/L/C nas dezenas e I/V/X nas unidades). Todo estado que encerra um número válido deve ser final, e a máquina não precisa tratar erros, pois as entradas são sempre válidas.</p><p><strong>Critérios sugeridos para correção.</strong> (i) Respeito ao limite de estados. (ii) Repetição máxima de três símbolos iguais. (iii) Notação subtrativa correta (IV, IX, XL, XC, CD). (iv) Estados finais adequados. (v) O valor 500 (D) aceito sozinho.</p>"
+   }
+  }
+ },
+ "2008": {
+  "observacao": "Caderno único da área de Computação. Foram mantidas as questões 1 a 40: Formação Geral, núcleo comum e específicas de Ciência da Computação.",
+  "padroes_texto": {
+   "9": {
+    "oficial": false,
+    "fonte": "Resposta esperada elaborada para este simulado (o padrão oficial de Formação Geral 2008 não estava na pasta)",
+    "html": "<p>O estudante deve <strong>escolher uma</strong> das concepções e explicar, em texto de 8 a 10 linhas, por que ela amplia o conceito de direito e contribui para a <strong>cidadania plena</strong> na perspectiva da <strong>integralidade/indivisibilidade</strong> dos direitos humanos (econômicos, sociais, civis, políticos e ambientais). Por exemplo:</p><ul><li><strong>Moradia digna</strong>: além do abrigo, envolve saneamento, infraestrutura urbana, acesso a transporte, escola, saúde, lazer e segurança da posse. O direito à habitação conecta-se aos direitos à saúde, à educação, ao trabalho e ao meio ambiente equilibrado.</li><li><strong>Segurança como bem-estar</strong>: deixa de ser apenas repressão (vigilância e punição) e passa a incluir prevenção, inclusão social, oportunidades, respeito aos direitos civis e participação comunitária. Combate as causas da violência e garante a liberdade de ir e vir.</li><li><strong>Trabalho como ação para a vida</strong>: o trabalho é visto como realização humana, com condições dignas, proteção social, saúde do trabalhador, qualificação e participação. Não se reduz à renda, o que fortalece a autonomia e a dignidade.</li></ul><p>A resposta é valorizada quando mostra que a nova concepção <strong>não isola</strong> um direito dos demais (indivisibilidade) e quando o texto tem coerência, coesão e linguagem na norma padrão.</p>"
+   },
+   "10": {
+    "oficial": false,
+    "fonte": "Resposta esperada elaborada para este simulado (o padrão oficial de Formação Geral 2008 não estava na pasta)",
+    "html": "<p>Texto dissertativo-argumentativo de 8 a 10 linhas, com ponto de vista apoiado em <strong>pelo menos dois argumentos</strong> e sem copiar os textos motivadores, que discuta a contradição entre os <strong>resultados ruins das avaliações oficiais</strong> (Pisa, Ideb/Saeb) e a <strong>avaliação positiva</strong> feita por alunos, pais e professores. Argumentos possíveis:</p><ul><li><strong>Baixa expectativa e falta de referência</strong>: sem parâmetros de comparação, a comunidade escolar tende a considerar satisfatória a escola que conhece; a cultura de baixa exigência naturaliza o fraco desempenho.</li><li><strong>Critérios diferentes</strong>: a opinião valoriza o acolhimento, a relação com os professores, a infraestrutura e o clima escolar, enquanto as avaliações medem competências de leitura e matemática.</li><li><strong>Desigualdade e contexto socioeconômico</strong>: para famílias com pouca escolaridade, o simples acesso à escola já é percebido como conquista.</li><li><strong>Uso dos resultados</strong>: as avaliações externas pouco divulgadas ou mal compreendidas não chegam à comunidade, o que dificulta a cobrança por qualidade.</li></ul><p>Pode-se concluir propondo maior divulgação e apropriação dos resultados, valorização e formação docente e participação da comunidade na gestão escolar.</p>"
+   }
+  }
+ },
+ "2011": {
+  "observacao": "Caderno único da área de Computação. Foram mantidas Formação Geral (1 a 8, D1 e D2), núcleo comum (9 a 30, D3 a D5) e as específicas de Ciência da Computação (36 a 40). Questão 13 anulada pelo INEP."
+ },
+ "2014": {
+  "observacao": "Prova de Bacharelado em Ciência da Computação."
+ },
+ "2017": {
+  "observacao": "Prova de Bacharelado em Ciência da Computação."
+ },
+ "2021": {
+  "observacao": "Prova de Bacharelado em Ciência da Computação. Questões 29 e 33 anuladas pelo INEP."
+ }
+}
