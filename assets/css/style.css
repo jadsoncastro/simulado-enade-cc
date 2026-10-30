@@ -59,6 +59,7 @@ footer { text-align: center; color: var(--suave); font-size: .82rem; padding: 2r
 }
 .cartao + .cartao, .secao + .secao { margin-top: 1.25rem; }
 .cartao.aviso { border-left: 4px solid var(--alerta); background: var(--alerta-claro); }
+.cartao.certificado { border-left: 4px solid var(--ok); background: var(--ok-claro); margin: 1rem 0; }
 .grade { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
 
 .btn {

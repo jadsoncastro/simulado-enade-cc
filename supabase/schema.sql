@@ -205,6 +205,18 @@ begin
 end;
 $$;
 
+-- Verificação pública de certificado (o código é o id da tentativa). Só responde para prova
+-- completa finalizada com 60% ou mais nas objetivas.
+create or replace function public.verificar_certificado(p_codigo uuid)
+returns table (nome text, ano int, aleatorio boolean, finalizada_em timestamptz,
+               acertos int, total_objetivas int, percentual numeric)
+language sql stable security definer set search_path = public as $$
+  select p.nome, t.ano, t.questoes is not null, t.finalizada_em, t.acertos, t.total_objetivas, t.percentual
+    from public.tentativas t join public.perfis p on p.id = t.aluno_id
+   where t.id = p_codigo and t.finalizada_em is not null
+     and t.modo = 'completa' and t.percentual >= 60;
+$$;
+
 -- Autoavaliação da discursiva (aluno, depois de ver o padrão de resposta)
 create or replace function public.autoavaliar(p_tentativa uuid, p_questao text, p_nota numeric)
 returns void language plpgsql security definer set search_path = public as $$
@@ -325,3 +337,4 @@ revoke execute on function public.avaliar_discursiva(bigint, numeric, text)  fro
 grant  execute on function public.finalizar_tentativa(uuid)                  to authenticated;
 grant  execute on function public.autoavaliar(uuid, text, numeric)           to authenticated;
 grant  execute on function public.avaliar_discursiva(bigint, numeric, text)  to authenticated;
+grant  execute on function public.verificar_certificado(uuid)                to anon, authenticated;

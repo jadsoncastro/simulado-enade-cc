@@ -73,7 +73,7 @@ class Q {
         if (Object.keys(p).some((k) => !["ano", "modo", "questoes"].includes(k))) return erro("permission denied");
         const q = p.questoes ?? null;
         if ((p.ano == null) === (q == null) || (q && (q.length < 1 || q.length > 40))) return erro("violates check constraint");
-        const row = { id: "t-" + d.seq++, aluno_id: me, ano: p.ano ?? null, modo: p.modo, questoes: q, iniciada_em: new Date().toISOString(),
+        const row = { id: crypto.randomUUID(), aluno_id: me, ano: p.ano ?? null, modo: p.modo, questoes: q, iniciada_em: new Date().toISOString(),
           finalizada_em: null, acertos: null, total_objetivas: null, percentual: null };
         d.tentativas.push(row); save(d); return this.out([row]);
       }
@@ -122,6 +122,12 @@ class Q {
 async function rpc(nome, a) {
   await new Promise((r) => setTimeout(r, 15));
   const d = db(), me = uid();
+  if (nome === "verificar_certificado") {
+    const t = d.tentativas.find((x) => x.id === a.p_codigo && x.finalizada_em && x.modo === "completa" && x.percentual >= 60);
+    const p = t && d.perfis.find((x) => x.id === t.aluno_id);
+    return { data: t ? [{ nome: p.nome, ano: t.ano, aleatorio: !!t.questoes, finalizada_em: t.finalizada_em,
+      acertos: t.acertos, total_objetivas: t.total_objetivas, percentual: t.percentual }] : [], error: null };
+  }
   if (nome === "finalizar_tentativa") {
     const t = d.tentativas.find((x) => x.id === a.p_tentativa);
     if (!t || t.aluno_id !== me) return erro("Tentativa não encontrada");

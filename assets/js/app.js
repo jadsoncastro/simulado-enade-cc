@@ -157,6 +157,12 @@ export function sortearQuestoes(provas, modo) {
       .map((q) => q.id)));
 }
 
+// Certificado: prova completa finalizada com este percentual ou mais nas objetivas
+// (o mesmo limite está em verificar_certificado, no supabase/schema.sql)
+export const CERTIFICADO_MINIMO = 60;
+export const podeEmitirCertificado = (t) =>
+  !!t.finalizada_em && t.modo === "completa" && Number(t.percentual) >= CERTIFICADO_MINIMO;
+
 export const ehAleatoria = (t) => Array.isArray(t.questoes);
 export const nomeProva = (t) => (ehAleatoria(t) ? "Simulado aleatório" : `ENADE ${t.ano}`);
 

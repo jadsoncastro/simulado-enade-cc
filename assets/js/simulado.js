@@ -1,12 +1,15 @@
 import {
   sb, el, toast, pct, dataHora, MODOS, carregarProvas, questoesDaTentativa, ehAleatoria, nomeProva,
-  imagemQuestao, blocoPadrao, exigirLogin, montarCabecalho,
+  imagemQuestao, blocoPadrao, exigirLogin, montarCabecalho, podeEmitirCertificado, CERTIFICADO_MINIMO,
 } from "./app.js";
+import { emitirCertificado } from "./certificado.js";
 
 const main = document.getElementById("conteudo");
 const LETRAS = ["A", "B", "C", "D", "E"];
 
 const estado = {
+  perfil: null,
+  provas: [],
   tentativa: null,
   questoes: [],
   respostas: new Map(), // questao_id -> linha de respostas
@@ -23,6 +26,7 @@ async function iniciar() {
   const u = await exigirLogin();
   if (!u) return;
   montarCabecalho(u.perfil);
+  estado.perfil = u.perfil;
 
   const id = new URLSearchParams(location.search).get("t");
   const { data: t, error } = await sb.from("tentativas").select("*").eq("id", id).maybeSingle();
@@ -32,7 +36,8 @@ async function iniciar() {
     return;
   }
   estado.tentativa = t;
-  estado.questoes = questoesDaTentativa(await carregarProvas(), t);
+  estado.provas = await carregarProvas();
+  estado.questoes = questoesDaTentativa(estado.provas, t);
   estado.marcadas = new Set(JSON.parse(localStorage.getItem(chaveMarcadas()) || "[]"));
 
   const { data: resp } = await sb.from("respostas").select("*").eq("tentativa_id", t.id);
@@ -355,6 +360,7 @@ function renderResumo() {
       disc.length ? el("div", { class: "kpi" },
         el("strong", {}, auto.length ? (auto.reduce((a, b) => a + b, 0) / auto.length).toFixed(1).replace(".", ",") : "—"),
         `autoavaliação média das discursivas (${auto.length}/${disc.length})`) : null),
+    blocoCertificado(t),
     el("h3", {}, "Desempenho por parte da prova"),
     el("div", { class: "tabela-rolagem" }, el("table", {},
       el("thead", {}, el("tr", {}, el("th", {}, "Parte"), el("th", { class: "num" }, "Acertos"), el("th", {}, ""), el("th", { class: "num" }, "%"))),
@@ -363,6 +369,26 @@ function renderResumo() {
       "Agora revise as discursivas: compare sua resposta com o padrão de resposta e faça a autoavaliação. ",
       el("button", { class: "btn btn-peq", onclick: () => irPara(estado.questoes.indexOf(disc[0])) }, "Ir para as discursivas")) : null,
     el("p", { class: "suave" }, "Use a grade ao lado para revisar cada questão: verde = acerto, vermelho = erro.")));
+}
+
+function blocoCertificado(t) {
+  if (podeEmitirCertificado(t)) {
+    const btn = el("button", { class: "btn" }, "Emitir certificado (PDF)");
+    btn.addEventListener("click", async () => {
+      btn.disabled = true;
+      try { await emitirCertificado(t, estado.perfil, estado.provas); }
+      catch (e) { toast("Não foi possível gerar o certificado: " + e.message, "erro"); }
+      btn.disabled = false;
+    });
+    return el("div", { class: "cartao certificado" },
+      el("h3", { style: "margin-top:0" }, "Parabéns! Você conquistou o certificado."),
+      el("p", {}, `Seu aproveitamento nas objetivas da prova completa foi de ${pct(t.percentual)}, ` +
+        `acima dos ${CERTIFICADO_MINIMO}% exigidos.`),
+      btn);
+  }
+  if (t.modo !== "completa") return null;
+  return el("p", { class: "suave" },
+    `Com ${CERTIFICADO_MINIMO}% ou mais nas objetivas da prova completa você pode emitir um certificado de realização do simulado.`);
 }
 
 // ---------------------------------------------------------------------------

@@ -1,7 +1,9 @@
 import {
   sb, configurado, el, toast, dataHora, pct, duracao, MODOS, carregarProvas, questoesDoModo,
-  sortearQuestoes, contagemAleatoria, ehAleatoria, nomeProva, entrarComGitHub, usuarioAtual, montarCabecalho,
+  sortearQuestoes, contagemAleatoria, ehAleatoria, nomeProva, podeEmitirCertificado, entrarComGitHub,
+  usuarioAtual, montarCabecalho,
 } from "./app.js";
+import { emitirCertificado } from "./certificado.js";
 
 const main = document.getElementById("conteudo");
 const ICONE_GITHUB =
@@ -111,7 +113,7 @@ async function telaPrincipal(perfil) {
       el("h1", {}, `Olá, ${(perfil.nome || "").split(" ")[0]}!`),
       el("p", { class: "suave" }, "Faça um simulado aleatório ou escolha uma edição do ENADE. Suas respostas são salvas automaticamente: você pode parar e continuar depois.")),
     el("section", { class: "secao grade" }, cartaoAleatorio(provas, abertas), cartoes),
-    el("section", { class: "secao cartao" }, el("h2", {}, "Minhas tentativas"), tabelaTentativas(tentativas || []))
+    el("section", { class: "secao cartao" }, el("h2", {}, "Minhas tentativas"), tabelaTentativas(tentativas || [], perfil, provas))
   );
 }
 
@@ -146,12 +148,16 @@ function cartaoAleatorio(provas, abertas) {
     sel, el("div", { class: "linha" }, btn, el("span", { class: "espaco" })), info);
 }
 
-function tabelaTentativas(tentativas) {
+function tabelaTentativas(tentativas, perfil, provas) {
   if (!tentativas.length) return el("p", { class: "suave" }, "Você ainda não iniciou nenhum simulado.");
   const linhas = tentativas.map((t) => {
     const acoes = el("div", { class: "linha" },
       el("a", { class: "btn btn-peq " + (t.finalizada_em ? "btn-sec" : ""), href: `simulado.html?t=${t.id}` },
         t.finalizada_em ? "Ver correção" : "Continuar"));
+    if (podeEmitirCertificado(t)) {
+      acoes.append(el("button", { class: "btn btn-peq", onclick: () => emitirCertificado(t, perfil, provas)
+        .catch((e) => toast("Não foi possível gerar o certificado: " + e.message, "erro")) }, "Certificado"));
+    }
     if (!t.finalizada_em) {
       acoes.append(el("button", { class: "btn btn-peq btn-perigo", onclick: async () => {
         if (!confirm("Descartar esta tentativa e todas as respostas dela?")) return;

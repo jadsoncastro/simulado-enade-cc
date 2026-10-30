@@ -35,6 +35,16 @@ Específico com 3 discursivas e 27 objetivas. Por isso cada aluno recebe uma pro
 Questões anuladas ficam de fora. A lista sorteada fica salva na tentativa (`tentativas.questoes`),
 e o aluno só vê o gabarito dessas questões depois de finalizar.
 
+### Certificado
+
+Quem finalizar a **prova completa** (de uma edição ou do simulado aleatório) com **60% ou mais**
+nas questões objetivas pode emitir um certificado em PDF. O botão aparece no resultado da prova e
+na lista "Minhas tentativas". O PDF é gerado no navegador (jsPDF) sobre o fundo
+`certificado/certificado.jpg` e traz um código de verificação. Qualquer pessoa, mesmo sem
+login, confere o certificado em `verificar.html` pela função `verificar_certificado` do banco.
+O limite de 60% está em `CERTIFICADO_MINIMO` (`assets/js/app.js`) e em `verificar_certificado`
+(`supabase/schema.sql`).
+
 Nas edições de 2005, 2008 e 2011 o caderno era único para toda a área de Computação. Por isso
 ficaram **só as questões que faziam parte da prova de Ciência da Computação**; as exclusivas de
 Engenharia de Computação, Sistemas de Informação e Licenciatura foram descartadas.
@@ -58,9 +68,11 @@ Engenharia de Computação, Sistemas de Informação e Licenciatura foram descar
 index.html            página inicial: login, cadastro, escolha da prova, histórico
 simulado.html         resolução e correção da prova
 professor.html        painel do professor
+verificar.html        verificação pública de certificado
+certificado/          fundo do certificado em PDF
 assets/js/config.js   URL e chave pública do Supabase  ← editar na publicação
 assets/js/app.js      funções compartilhadas (login, dados, componentes)
-assets/js/inicio.js | simulado.js | professor.js
+assets/js/inicio.js | simulado.js | professor.js | certificado.js | verificar.js
 assets/css/style.css
 data/provas.json      questões (sem gabarito), seções e padrões de resposta
 data/img/<ano>/       recortes das questões (WebP) e padrao/ com os padrões de resposta
