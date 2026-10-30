@@ -26,7 +26,8 @@ function visible(d, t) {
   if (t === "perfis") return d.perfis.filter((p) => p.id === me || prof);
   if (t === "tentativas") return d.tentativas.filter((x) => x.aluno_id === me || prof);
   if (t === "respostas") return d.respostas.filter((x) => x.aluno_id === me || prof);
-  if (t === "gabarito") return gabRows().filter((g) => prof || d.tentativas.some((x) => x.aluno_id === me && x.finalizada_em && x.ano === g.ano));
+  if (t === "gabarito") return gabRows().filter((g) => prof || d.tentativas.some((x) => x.aluno_id === me && x.finalizada_em &&
+    (x.ano === g.ano || (x.questoes || []).includes(g.questao_id))));
   if (t === "professores_autorizados") return prof ? d.professores_autorizados : [];
   throw new Error("tabela desconhecida " + t);
 }
@@ -44,6 +45,7 @@ class Q {
   constructor(t) { Object.assign(this, { t, filters: [], op: "select", ord: null, sing: null, rng: null }); }
   select() { return this; }
   eq(c, v) { this.filters.push((r) => String(r[c]) === String(v)); return this; }
+  in(c, vs) { this.filters.push((r) => vs.map(String).includes(String(r[c]))); return this; }
   not(c) { this.filters.push((r) => r[c] !== null && r[c] !== undefined); return this; }
   order(c, o = {}) { this.ord = [c, o.ascending !== false]; return this; }
   range(a, b) { this.rng = [a, b]; return this; }
@@ -68,8 +70,10 @@ class Q {
     if (this.op === "insert") {
       const p = this.payload;
       if (t === "tentativas") {
-        if (Object.keys(p).some((k) => !["ano", "modo"].includes(k))) return erro("permission denied");
-        const row = { id: "t-" + d.seq++, aluno_id: me, ano: p.ano, modo: p.modo, iniciada_em: new Date().toISOString(),
+        if (Object.keys(p).some((k) => !["ano", "modo", "questoes"].includes(k))) return erro("permission denied");
+        const q = p.questoes ?? null;
+        if ((p.ano == null) === (q == null) || (q && (q.length < 1 || q.length > 40))) return erro("violates check constraint");
+        const row = { id: "t-" + d.seq++, aluno_id: me, ano: p.ano ?? null, modo: p.modo, questoes: q, iniciada_em: new Date().toISOString(),
           finalizada_em: null, acertos: null, total_objetivas: null, percentual: null };
         d.tentativas.push(row); save(d); return this.out([row]);
       }
@@ -122,9 +126,9 @@ async function rpc(nome, a) {
     const t = d.tentativas.find((x) => x.id === a.p_tentativa);
     if (!t || t.aluno_id !== me) return erro("Tentativa não encontrada");
     if (!t.finalizada_em) {
-      const tot = gabRows().filter((g) => g.ano === t.ano && g.resposta !== "ANULADA" &&
-        (t.modo === "completa" || (t.modo === "formacao_geral" && g.componente === "FG") || (t.modo === "especifico" && g.componente === "CE"))).length;
-      const ac = d.respostas.filter((r) => r.tentativa_id === t.id && r.correta).length;
+      const tot = gabRows().filter((g) => g.resposta !== "ANULADA" && (t.questoes ? t.questoes.includes(g.questao_id) : g.ano === t.ano &&
+        (t.modo === "completa" || (t.modo === "formacao_geral" && g.componente === "FG") || (t.modo === "especifico" && g.componente === "CE")))).length;
+      const ac = d.respostas.filter((r) => r.tentativa_id === t.id && r.correta && (!t.questoes || t.questoes.includes(r.questao_id))).length;
       Object.assign(t, { finalizada_em: new Date().toISOString(), acertos: ac, total_objetivas: tot,
         percentual: tot ? Math.round(1000 * ac / tot) / 10 : null });
       save(d);

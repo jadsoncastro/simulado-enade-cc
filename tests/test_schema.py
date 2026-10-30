@@ -104,6 +104,28 @@ cur.execute(UPSERT, (t2, "2014-Q01", "objetiva", "A", None))
 cur.execute("select total_objetivas from finalizar_tentativa(%s)", (t2,))
 check(cur.fetchone()[0] == 8, "modo Formação Geral conta 8 objetivas")
 
+print("aluno1 (simulado aleatório):")
+check(fails("insert into tentativas (ano, modo, questoes) values (2021, 'completa', array['2021-Q01'])"),
+      "não mistura edição com lista de questões")
+check(fails("insert into tentativas (modo) values ('completa')"), "aleatório exige lista de questões")
+check(fails("insert into tentativas (modo, questoes) values ('completa', %s)", ([f"2021-Q{i:02}" for i in range(1, 36)] + [f"2014-Q{i:02}" for i in range(1, 7)],)),
+      "aleatório tem no máximo 40 questões")
+cur.execute("insert into tentativas (modo, questoes) values ('completa', array['2005-Q41','2017-Q03','2011-Q13','2017-D02']) returning id")
+t3 = cur.fetchone()[0]
+cur.execute(UPSERT, (t3, "2005-Q41", "objetiva", "A", None))
+cur.execute("select resposta from gabarito where questao_id = '2005-Q41'")
+check(cur.fetchone() is None, "não vê gabarito do aleatório antes de finalizar")
+cur.execute("select resposta from gabarito where questao_id = '2017-Q03'"); assert cur.fetchone() is None
+cur.execute("reset role"); cur.execute("select resposta from gabarito where questao_id = '2017-Q03'")
+g17 = cur.fetchone()[0]; as_user("aluno1")
+cur.execute(UPSERT, (t3, "2017-Q03", "objetiva", g17, None))
+cur.execute(UPSERT, (t3, "2014-Q05", "objetiva", "A", None))   # fora do sorteio: não conta
+cur.execute("select acertos, total_objetivas from finalizar_tentativa(%s)", (t3,))
+res = cur.fetchone(); check(res == (1, 2), f"aleatório conta só as sorteadas, sem anuladas: {res}")
+cur.execute("select count(*) from gabarito where questao_id in ('2005-Q41','2017-Q03','2011-Q13')")
+check(cur.fetchone()[0] == 3, "vê gabarito das questões sorteadas após finalizar")
+cur.execute("select count(*) from gabarito where ano = 2017"); check(cur.fetchone()[0] == 1, "não vê o resto do gabarito de 2017")
+
 print("aluno2:")
 as_user("aluno2")
 cur.execute("select count(*) from tentativas"); check(cur.fetchone()[0] == 0, "não vê tentativas de outro aluno")
@@ -116,7 +138,7 @@ check(fails("insert into professores_autorizados values ('aluno2')"), "não se i
 
 print("prof1:")
 as_user("prof1")
-cur.execute("select count(*) from tentativas"); check(cur.fetchone()[0] == 2, "professor vê todas as tentativas")
+cur.execute("select count(*) from tentativas"); check(cur.fetchone()[0] == 3, "professor vê todas as tentativas")
 cur.execute("select count(*) from perfis"); check(cur.fetchone()[0] == 3, "professor vê todos os perfis")
 cur.execute("select id from respostas where questao_id = '2021-D03'")
 rid = cur.fetchone()[0]

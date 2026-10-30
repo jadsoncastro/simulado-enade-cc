@@ -1,6 +1,6 @@
 import {
-  sb, el, toast, pct, dataHora, MODOS, carregarProvas, questoesDoModo, imagemQuestao,
-  blocoPadrao, exigirLogin, montarCabecalho,
+  sb, el, toast, pct, dataHora, MODOS, carregarProvas, questoesDaTentativa, ehAleatoria, nomeProva,
+  imagemQuestao, blocoPadrao, exigirLogin, montarCabecalho,
 } from "./app.js";
 
 const main = document.getElementById("conteudo");
@@ -8,7 +8,6 @@ const LETRAS = ["A", "B", "C", "D", "E"];
 
 const estado = {
   tentativa: null,
-  prova: null,
   questoes: [],
   respostas: new Map(), // questao_id -> linha de respostas
   gabarito: new Map(),  // questao_id -> letra (só após finalizar)
@@ -33,9 +32,7 @@ async function iniciar() {
     return;
   }
   estado.tentativa = t;
-  const provas = await carregarProvas();
-  estado.prova = provas.find((p) => p.ano === t.ano);
-  estado.questoes = questoesDoModo(estado.prova, t.modo);
+  estado.questoes = questoesDaTentativa(await carregarProvas(), t);
   estado.marcadas = new Set(JSON.parse(localStorage.getItem(chaveMarcadas()) || "[]"));
 
   const { data: resp } = await sb.from("respostas").select("*").eq("tentativa_id", t.id);
@@ -48,14 +45,16 @@ async function iniciar() {
     const salvo = Number(sessionStorage.getItem(`atual:${t.id}`));
     estado.atual = Number.isInteger(salvo) && salvo < estado.questoes.length ? salvo : 0;
   }
-  document.title = `ENADE ${t.ano} – Simulado`;
+  document.title = `${nomeProva(t)} – Simulado`;
   render();
   if (!finalizada()) setInterval(atualizarRelogio, 1000);
   document.addEventListener("keydown", atalhos);
 }
 
 async function carregarGabarito() {
-  const { data, error } = await sb.from("gabarito").select("questao_id,resposta").eq("ano", estado.tentativa.ano);
+  const t = estado.tentativa;
+  const consulta = sb.from("gabarito").select("questao_id,resposta");
+  const { data, error } = await (ehAleatoria(t) ? consulta.in("questao_id", t.questoes) : consulta.eq("ano", t.ano));
   if (error) toast("Erro ao carregar o gabarito: " + error.message, "erro");
   estado.gabarito = new Map((data || []).map((g) => [g.questao_id, g.resposta]));
 }
@@ -109,7 +108,7 @@ function renderLateral() {
     ]));
 
   const cartao = el("div", { class: "cartao" },
-    el("div", { class: "suave" }, `ENADE ${t.ano} · ${MODOS[t.modo].nome}`),
+    el("div", { class: "suave" }, `${nomeProva(t)} · ${MODOS[t.modo].nome}`),
     finalizada()
       ? el("div", {}, el("div", { class: "relogio" }, `${t.acertos}/${t.total_objetivas}`),
           el("small", {}, `acertos nas objetivas (${pct(t.percentual)})`))
@@ -346,7 +345,7 @@ function renderResumo() {
   });
 
   elQuestao.replaceChildren(el("div", { class: "cartao" },
-    el("h2", {}, `Resultado – ENADE ${t.ano}`),
+    el("h2", {}, `Resultado – ${nomeProva(t)}`),
     el("p", { class: "suave" }, `${MODOS[t.modo].nome} · iniciada em ${dataHora(t.iniciada_em)} · finalizada em ${dataHora(t.finalizada_em)}`),
     el("div", { class: "resumo-kpis" },
       el("div", { class: "kpi" }, el("strong", {}, `${t.acertos}/${t.total_objetivas}`), "acertos nas objetivas"),

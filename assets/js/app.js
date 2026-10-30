@@ -120,6 +120,62 @@ export function questoesDoModo(prova, modo) {
   return prova.questoes;
 }
 
+// ---------------------------------------------------------------------------
+// Simulado aleatório: questões sorteadas de todas as edições, na estrutura do ENADE
+// ---------------------------------------------------------------------------
+export const COMPOSICAO_ALEATORIA = {
+  FG: { discursiva: 2, objetiva: 8 },
+  CE: { discursiva: 3, objetiva: 27 },
+};
+
+const componentesDoModo = (modo) =>
+  modo === "formacao_geral" ? ["FG"] : modo === "especifico" ? ["CE"] : ["FG", "CE"];
+
+export function contagemAleatoria(modo) {
+  const cs = componentesDoModo(modo).map((c) => COMPOSICAO_ALEATORIA[c]);
+  return { objetivas: cs.reduce((s, c) => s + c.objetiva, 0), discursivas: cs.reduce((s, c) => s + c.discursiva, 0) };
+}
+
+function embaralhar(xs) {
+  const a = [...xs], r = new Uint32Array(a.length);
+  crypto.getRandomValues(r);
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = r[i] % (i + 1);
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+// Sorteia os ids das questões (anuladas ficam de fora), na ordem do caderno: discursivas e
+// objetivas da Formação Geral, depois as do Componente Específico
+export function sortearQuestoes(provas, modo) {
+  const todas = provas.flatMap((p) => p.questoes).filter((q) => !q.anulada);
+  return componentesDoModo(modo).flatMap((c) => ["discursiva", "objetiva"].flatMap((tipo) =>
+    embaralhar(todas.filter((q) => q.componente === c && q.tipo === tipo))
+      .slice(0, COMPOSICAO_ALEATORIA[c][tipo])
+      .sort((a, b) => a.ano - b.ano || a.numero - b.numero)
+      .map((q) => q.id)));
+}
+
+export const ehAleatoria = (t) => Array.isArray(t.questoes);
+export const nomeProva = (t) => (ehAleatoria(t) ? "Simulado aleatório" : `ENADE ${t.ano}`);
+
+// Questões de uma tentativa. No simulado aleatório elas são renumeradas (1–35 e D1–D5) e o rótulo
+// indica a edição e o número de origem.
+export function questoesDaTentativa(provas, t) {
+  if (!ehAleatoria(t)) return questoesDoModo(provas.find((p) => p.ano === t.ano), t.modo);
+  const porId = new Map(provas.flatMap((p) => p.questoes.map((q) => [q.id, q])));
+  const cont = { objetiva: 0, discursiva: 0 };
+  return t.questoes.map((id) => porId.get(id)).filter(Boolean).map((q) => {
+    const n = ++cont[q.tipo];
+    return {
+      ...q, numero: n,
+      rotulo: `${q.tipo === "discursiva" ? "Questão Discursiva" : "Questão"} ${n} · ENADE ${q.ano}, ${q.rotulo.toLowerCase()}`,
+      secao: q.componente === "FG" ? "Formação Geral" : "Componente Específico",
+    };
+  });
+}
+
 // Busca todas as linhas de uma consulta (o Supabase limita a 1000 por requisição)
 export async function buscarTudo(construir, passo = 1000) {
   let todas = [];

@@ -53,6 +53,14 @@ create table if not exists public.tentativas (
 );
 create index if not exists tentativas_aluno_idx on public.tentativas (aluno_id);
 
+-- Simulado aleatório: ano nulo e a lista de questões sorteadas para o aluno
+alter table public.tentativas alter column ano drop not null;
+alter table public.tentativas add column if not exists questoes text[];
+alter table public.tentativas drop constraint if exists tentativas_tipo_check;
+alter table public.tentativas add constraint tentativas_tipo_check check (
+  (ano is not null and questoes is null)
+  or (ano is null and coalesce(cardinality(questoes), 0) between 1 and 40));
+
 create table if not exists public.respostas (
   id                    bigint generated always as identity primary key,
   tentativa_id          uuid not null references public.tentativas (id) on delete cascade,
@@ -168,16 +176,23 @@ begin
     return t;
   end if;
 
-  select count(*) into v_total
-    from public.gabarito g
-   where g.ano = t.ano and g.resposta <> 'ANULADA'
-     and (t.modo = 'completa'
-          or (t.modo = 'formacao_geral' and g.componente = 'FG')
-          or (t.modo = 'especifico' and g.componente = 'CE'));
+  if t.questoes is not null then
+    select count(*) into v_total
+      from public.gabarito g
+     where g.questao_id = any (t.questoes) and g.resposta <> 'ANULADA';
+  else
+    select count(*) into v_total
+      from public.gabarito g
+     where g.ano = t.ano and g.resposta <> 'ANULADA'
+       and (t.modo = 'completa'
+            or (t.modo = 'formacao_geral' and g.componente = 'FG')
+            or (t.modo = 'especifico' and g.componente = 'CE'));
+  end if;
 
   select count(*) into v_acertos
     from public.respostas r
-   where r.tentativa_id = t.id and r.tipo = 'objetiva' and r.correta;
+   where r.tentativa_id = t.id and r.tipo = 'objetiva' and r.correta
+     and (t.questoes is null or r.questao_id = any (t.questoes));
 
   update public.tentativas
      set finalizada_em   = now(),
@@ -242,12 +257,14 @@ create policy prof_incluir on public.professores_autorizados for insert with che
 drop policy if exists prof_remover on public.professores_autorizados;
 create policy prof_remover on public.professores_autorizados for delete using (public.is_professor());
 
--- gabarito: professor sempre; aluno só do ano de uma tentativa que ele já finalizou
+-- gabarito: professor sempre; aluno só do ano (ou das questões sorteadas) de uma tentativa
+-- que ele já finalizou
 drop policy if exists gabarito_ler on public.gabarito;
 create policy gabarito_ler on public.gabarito for select using (
   public.is_professor() or exists (
     select 1 from public.tentativas t
-     where t.aluno_id = auth.uid() and t.finalizada_em is not null and t.ano = gabarito.ano)
+     where t.aluno_id = auth.uid() and t.finalizada_em is not null
+       and (t.ano = gabarito.ano or gabarito.questao_id = any (t.questoes)))
 );
 
 -- tentativas
@@ -288,7 +305,7 @@ grant  update (nome, matricula) on public.perfis to authenticated;
 
 revoke insert, update on public.tentativas from authenticated;
 grant  select, delete on public.tentativas to authenticated;
-grant  insert (ano, modo) on public.tentativas to authenticated;
+grant  insert (ano, modo, questoes) on public.tentativas to authenticated;
 
 revoke insert, update on public.respostas from authenticated;
 grant  select on public.respostas to authenticated;

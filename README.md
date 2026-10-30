@@ -4,8 +4,9 @@ Site de simulado com as provas oficiais do ENADE de **Bacharelado em Ciência da
 (edições 2005, 2008, 2011, 2014, 2017 e 2021). Fica hospedado no **GitHub Pages**, e o login e
 os dados ficam no **Supabase**.
 
-- **Alunos** entram com a conta do GitHub, escolhem a edição e o modo (prova completa, só
-  Formação Geral ou só Componente Específico) e respondem no próprio site. As respostas são
+- **Alunos** entram com a conta do GitHub e escolhem entre um **simulado aleatório** ou uma
+  edição específica, além do modo (prova completa, só Formação Geral ou só Componente
+  Específico), e respondem no próprio site. As respostas são
   salvas automaticamente e dá para parar e continuar depois. Ao finalizar, veem a correção das
   objetivas pelo gabarito oficial e o **padrão de resposta** de cada discursiva, e fazem a
   autoavaliação.
@@ -25,6 +26,14 @@ O passo a passo de publicação está em **[docs/PUBLICACAO.md](docs/PUBLICACAO.
 | 2011 | 35 | 5 | Caderno de Computação: FG + núcleo comum + específicas de CC (36–40). Q13 anulada |
 | 2008 | 35 | 5 | Caderno de Computação: questões 1–40 (FG, núcleo comum e CC) |
 | 2005 | 35 | 5 | Caderno de Computação: FG (1–10), núcleo comum CC/EC (41–55) e CC (56–70) |
+
+### Simulado aleatório
+
+Cada vez que um aluno gera um simulado aleatório, o site sorteia questões de todas as edições,
+na estrutura da prova do ENADE: Formação Geral com 2 discursivas e 8 objetivas e Componente
+Específico com 3 discursivas e 27 objetivas. Por isso cada aluno recebe uma prova diferente.
+Questões anuladas ficam de fora. A lista sorteada fica salva na tentativa (`tentativas.questoes`),
+e o aluno só vê o gabarito dessas questões depois de finalizar.
 
 Nas edições de 2005, 2008 e 2011 o caderno era único para toda a área de Computação. Por isso
 ficaram **só as questões que faziam parte da prova de Ciência da Computação**; as exclusivas de

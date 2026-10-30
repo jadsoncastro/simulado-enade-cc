@@ -1,5 +1,6 @@
 import {
-  sb, el, toast, pct, dataHora, MODOS, carregarProvas, questoesDoModo, imagemQuestao, blocoPadrao,
+  sb, el, toast, pct, dataHora, MODOS, carregarProvas, questoesDaTentativa, ehAleatoria, nomeProva,
+  imagemQuestao, blocoPadrao,
   buscarTudo, baixarCSV, modal, exigirLogin, montarCabecalho,
 } from "./app.js";
 
@@ -69,9 +70,14 @@ function tabela(cabecalhos, linhas, numericas = []) {
 function selectAno(incluirTodos = true, valor = "") {
   return el("select", {},
     incluirTodos ? el("option", { value: "" }, "Todas as edições") : null,
+    incluirTodos ? el("option", { value: "aleatorio" }, "Simulado aleatório") : null,
     [...D.provas].sort((a, b) => b.ano - a.ano).map((p) =>
       el("option", { value: p.ano, selected: String(p.ano) === String(valor) }, `ENADE ${p.ano}`)));
 }
+
+// Filtro de edição aplicado a uma tentativa ("" = todas, "aleatorio" = simulados aleatórios)
+const tentativaNoFiltro = (t, valor) =>
+  !valor || (valor === "aleatorio" ? ehAleatoria(t) : t.ano === Number(valor));
 
 // ---------------------------------------------------------------------------
 // Resumo
@@ -82,11 +88,14 @@ function renderResumo(corpo) {
   const comSimulado = new Set(fin.map((t) => t.aluno_id));
   const media = (xs) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null);
 
-  const porAno = [...D.provas].sort((a, b) => b.ano - a.ano).map((p) => {
-    const ts = fin.filter((t) => t.ano === p.ano);
+  const grupos = [
+    { nome: "Simulado aleatório", ts: fin.filter(ehAleatoria) },
+    ...[...D.provas].sort((a, b) => b.ano - a.ano).map((p) => ({ nome: `ENADE ${p.ano}`, ts: fin.filter((t) => t.ano === p.ano) })),
+  ];
+  const porAno = grupos.map(({ nome, ts }) => {
     const comp = (c) => {
       const vals = ts.map((t) => {
-        const qs = questoesDoModo(p, t.modo).filter((q) => q.tipo === "objetiva" && !q.anulada && q.componente === c);
+        const qs = questoesDaTentativa(D.provas, t).filter((q) => q.tipo === "objetiva" && !q.anulada && q.componente === c);
         if (!qs.length) return null;
         const rs = D.respPorTentativa.get(t.id) || [];
         return (100 * rs.filter((r) => r.correta && qs.some((q) => q.id === r.questao_id)).length) / qs.length;
@@ -94,7 +103,7 @@ function renderResumo(corpo) {
       return media(vals);
     };
     return el("tr", {},
-      el("td", {}, `ENADE ${p.ano}`),
+      el("td", {}, nome),
       el("td", { class: "num" }, ts.length),
       el("td", { class: "num" }, new Set(ts.map((t) => t.aluno_id)).size),
       el("td", { class: "num" }, pct(media(ts.map((t) => Number(t.percentual))))),
@@ -156,7 +165,7 @@ function exportarAlunos() {
   for (const a of D.perfis.filter((p) => p.papel === "aluno")) {
     const ts = finalizadas().filter((t) => t.aluno_id === a.id);
     if (!ts.length) linhas.push([a.nome, a.matricula, a.github, a.email, "", "", "", "", "", "", ""]);
-    for (const t of ts) linhas.push([a.nome, a.matricula, a.github, a.email, t.ano, MODOS[t.modo].nome,
+    for (const t of ts) linhas.push([a.nome, a.matricula, a.github, a.email, nomeProva(t), MODOS[t.modo].nome,
       dataHora(t.iniciada_em), dataHora(t.finalizada_em), t.acertos, t.total_objetivas, String(t.percentual).replace(".", ",")]);
   }
   baixarCSV(`alunos_simulado_enade_${new Date().toISOString().slice(0, 10)}.csv`, linhas);
@@ -167,7 +176,7 @@ function detalheAluno(a) {
   modal(`${a.nome || a.github} ${a.matricula ? "· " + a.matricula : ""}`, el("div", {},
     el("p", { class: "suave" }, `GitHub: ${a.github || "—"} · e-mail: ${a.email || "—"} · cadastro em ${dataHora(a.criado_em)}`),
     ts.length ? tabela(["Edição", "Modo", "Início", "Situação", "Acertos", "%", ""], ts.map((t) =>
-      el("tr", {}, el("td", {}, t.ano), el("td", {}, MODOS[t.modo].nome), el("td", {}, dataHora(t.iniciada_em)),
+      el("tr", {}, el("td", {}, nomeProva(t)), el("td", {}, MODOS[t.modo].nome), el("td", {}, dataHora(t.iniciada_em)),
         el("td", {}, t.finalizada_em ? "Finalizada" : "Em andamento"),
         el("td", { class: "num" }, t.finalizada_em ? `${t.acertos}/${t.total_objetivas}` : "—"),
         el("td", { class: "num" }, pct(t.percentual)),
@@ -184,13 +193,13 @@ function renderTentativas(corpo) {
     el("option", { value: "a" }, "Em andamento"));
   const lista = el("div");
   const desenhar = () => {
-    const ts = D.tentativas.filter((t) => (!ano.value || t.ano === Number(ano.value)) &&
+    const ts = D.tentativas.filter((t) => tentativaNoFiltro(t, ano.value) &&
       (!situ.value || (situ.value === "f") === !!t.finalizada_em));
     lista.replaceChildren(ts.length ? tabela(["Aluno", "Edição", "Modo", "Início", "Fim", "Respondidas", "Acertos", "%", ""],
       ts.map((t) => {
         const n = (D.respPorTentativa.get(t.id) || []).filter((r) => r.alternativa || r.tipo === "discursiva").length;
         return el("tr", {},
-          el("td", {}, nomeAluno(t.aluno_id)), el("td", {}, t.ano), el("td", {}, MODOS[t.modo].nome),
+          el("td", {}, nomeAluno(t.aluno_id)), el("td", {}, nomeProva(t)), el("td", {}, MODOS[t.modo].nome),
           el("td", {}, dataHora(t.iniciada_em)), el("td", {}, dataHora(t.finalizada_em)),
           el("td", { class: "num" }, n),
           el("td", { class: "num" }, t.finalizada_em ? `${t.acertos}/${t.total_objetivas}` : "—"),
@@ -209,7 +218,7 @@ function renderTentativas(corpo) {
 }
 
 async function excluirTentativa(t) {
-  if (!confirm(`Excluir a tentativa de ${nomeAluno(t.aluno_id)} (ENADE ${t.ano})? As respostas serão apagadas.`)) return;
+  if (!confirm(`Excluir a tentativa de ${nomeAluno(t.aluno_id)} (${nomeProva(t)})? As respostas serão apagadas.`)) return;
   const { error } = await sb.from("tentativas").delete().eq("id", t.id);
   if (error) return toast(error.message, "erro");
   toast("Tentativa excluída.", "ok");
@@ -218,11 +227,10 @@ async function excluirTentativa(t) {
 }
 
 async function detalheTentativa(t) {
-  const prova = D.provas.find((p) => p.ano === t.ano);
   const { data: rs, error } = await sb.from("respostas").select("*").eq("tentativa_id", t.id);
   if (error) return toast(error.message, "erro");
   const porQ = new Map(rs.map((r) => [r.questao_id, r]));
-  const linhas = questoesDoModo(prova, t.modo).map((q) => {
+  const linhas = questoesDaTentativa(D.provas, t).map((q) => {
     const r = porQ.get(q.id);
     const gab = D.gabarito.get(q.id);
     let res = "—";
@@ -242,13 +250,14 @@ async function detalheTentativa(t) {
       el("td", {}, q.tipo === "objetiva" ? gab || "—" : ""),
       el("td", {}, res));
   });
-  modal(`${nomeAluno(t.aluno_id)} · ENADE ${t.ano} · ${MODOS[t.modo].nome}`, el("div", {},
+  modal(`${nomeAluno(t.aluno_id)} · ${nomeProva(t)} · ${MODOS[t.modo].nome}`, el("div", {},
     el("p", { class: "suave" }, `Início ${dataHora(t.iniciada_em)} · fim ${dataHora(t.finalizada_em)} · ` +
       (t.finalizada_em ? `${t.acertos}/${t.total_objetivas} (${pct(t.percentual)})` : "em andamento")),
     tabela(["Questão", "Parte", "Resposta", "Gabarito", "Resultado"], linhas)), { largo: true });
 }
 
 function verQuestao(q) {
+  q = D.questoes.get(q.id) || q; // no simulado aleatório, mostra a numeração original
   modal(`ENADE ${q.ano} · ${q.rotulo}`, el("div", {},
     el("p", {}, el("span", { class: "selo" }, q.secao), " ",
       q.tipo === "objetiva" ? `Gabarito: ${D.gabarito.get(q.id) || "—"}` : ""),
@@ -276,7 +285,7 @@ async function renderDiscursivas(corpo) {
   } catch (e) { return toast(e.message, "erro"); }
 
   const desenhar = () => {
-    const sel = itens.filter((r) => (!ano.value || fin.get(r.tentativa_id).ano === Number(ano.value)) &&
+    const sel = itens.filter((r) => tentativaNoFiltro(fin.get(r.tentativa_id), ano.value) &&
       (!filtro.value || r.nota_professor === null));
     if (!sel.length) return lista.replaceChildren(el("p", { class: "suave" }, "Nenhuma resposta com esses filtros."));
     lista.replaceChildren(...sel.slice(0, 60).map(cartaoDiscursiva), sel.length > 60

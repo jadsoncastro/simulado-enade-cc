@@ -56,9 +56,9 @@ with sync_playwright() as pw:
     pg.fill("#matricula", "21.1.4001")
     pg.get_by_role("button", name="Salvar e continuar").click()
     expect(pg.get_by_text("Olá, Ana!")).to_be_visible()
-    expect(pg.locator(".prova")).to_have_count(6)
+    expect(pg.locator(".prova")).to_have_count(7)
     pg.screenshot(path=f"{OUT}/02_inicio.png", full_page=True)
-    ok("cadastro e lista de 6 provas")
+    ok("cadastro, simulado aleatório e lista de 6 provas")
 
     # 2. Inicia ENADE 2021 completa
     card = pg.locator(".prova", has_text="ENADE 2021")
@@ -128,11 +128,49 @@ with sync_playwright() as pw:
     pg.screenshot(path=f"{OUT}/07_nao_oficial.png", full_page=True)
     ok("modo específico 2005 (28 objetivas) e padrão não oficial")
 
-    # 6. Painel do professor
+    # 6. Simulado aleatório
+    pg.goto(BASE + "index.html")
+    card = pg.locator(".prova", has_text="Simulado aleatório")
+    card.get_by_role("button", name="Gerar simulado").click()
+    expect(pg.locator(".btn-q")).to_have_count(40)
+    expect(pg.get_by_role("heading", name=re.compile(r"^Questão Discursiva 1 · ENADE \d{4}"))).to_be_visible()
+    d = pg.evaluate("JSON.parse(localStorage.getItem('fakedb'))")
+    ta = next(t for t in d["tentativas"] if t["questoes"])
+    qs = ta["questoes"]
+    assert ta["ano"] is None and len(qs) == len(set(qs)) == 40, ta
+    assert sum("-D" in q for q in qs) == 5 and all(gab.get(q, {}).get("resposta") != "ANULADA" for q in qs), qs
+    assert [gab[q]["componente"] for q in qs if "-Q" in q] == ["FG"] * 8 + ["CE"] * 27, qs
+    assert len({q[:4] for q in qs}) > 1, "questões de uma única edição"
+    ok("simulado aleatório com 40 questões sorteadas de várias edições, sem anuladas")
+    pg.locator(".btn-q", has_text=re.compile(r"^1$")).click()
+    q1 = next(q for q in qs if "-Q" in q)
+    pg.keyboard.press(gab[q1]["resposta"].lower())
+    expect(pg.locator(".alt.marcada")).to_have_text(gab[q1]["resposta"])
+    pg.screenshot(path=f"{OUT}/07b_aleatorio.png", full_page=True)
+    pg.goto(BASE + "index.html")
+    pg.locator(".prova", has_text="Simulado aleatório").get_by_role("button", name="Continuar").click()
+    pg.get_by_role("button", name="Finalizar prova").first.click()
+    expect(pg.get_by_role("heading", name="Resultado – Simulado aleatório")).to_be_visible()
+    expect(pg.locator(".kpi").first).to_contain_text("1/35")
+    pg.locator(".btn-q", has_text=re.compile(r"^1$")).click()
+    expect(pg.locator(".alt.certa")).to_have_text(gab[q1]["resposta"])
+    ok("simulado aleatório continua, finaliza (1/35) e mostra o gabarito")
+    pg.goto(BASE + "index.html")
+    pg.locator(".prova", has_text="Simulado aleatório").get_by_role("button", name="Gerar simulado").click()
+    expect(pg.locator(".btn-q")).to_have_count(40)
+    d = pg.evaluate("JSON.parse(localStorage.getItem('fakedb'))")
+    novo = [t for t in d["tentativas"] if t["questoes"]][-1]["questoes"]
+    assert novo != qs, "o novo sorteio repetiu o anterior"
+    pg.goto(BASE + "index.html")
+    pg.locator("tr", has_text="Em andamento").get_by_role("button", name="Descartar").click()
+    expect(pg.get_by_text("Em andamento")).to_have_count(0)
+    ok("novo sorteio gera outras questões")
+
+    # 7. Painel do professor
     pg.evaluate("localStorage.setItem('fakeuser', 'u-prof1')")
     pg.goto(BASE + "professor.html")
     expect(pg.get_by_role("heading", name="Painel do professor")).to_be_visible()
-    expect(pg.locator(".kpi").nth(2)).to_contain_text("2")
+    expect(pg.locator(".kpi").nth(2)).to_contain_text("3")
     pg.screenshot(path=f"{OUT}/08_prof_resumo.png", full_page=True)
     ok("resumo do painel")
     pg.get_by_role("button", name="Alunos").click()
@@ -167,7 +205,7 @@ with sync_playwright() as pw:
     expect(pg.get_by_text("aluno1 agora é professor.")).to_be_visible()
     ok("inclusão de professor")
 
-    # 7. Aluno vê a nota do professor
+    # 8. Aluno vê a nota do professor
     pg.evaluate("localStorage.setItem('fakeuser', 'u-aluno1')")
     d = pg.evaluate("JSON.parse(localStorage.getItem('fakedb'))")
     t2021 = next(t for t in d["tentativas"] if t["ano"] == 2021)
@@ -176,7 +214,7 @@ with sync_playwright() as pw:
     expect(pg.get_by_text("Avaliação do professor: 8,5 / 10")).to_be_visible()
     ok("aluno vê a avaliação do professor")
 
-    # 8. Celular
+    # 9. Celular
     m = ctx.new_page()
     m.on("pageerror", lambda e: erros.append(f"pageerror: {e}"))
     m.set_viewport_size({"width": 390, "height": 844})

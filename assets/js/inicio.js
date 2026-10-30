@@ -1,6 +1,6 @@
 import {
   sb, configurado, el, toast, dataHora, pct, duracao, MODOS, carregarProvas, questoesDoModo,
-  entrarComGitHub, usuarioAtual, montarCabecalho,
+  sortearQuestoes, contagemAleatoria, ehAleatoria, nomeProva, entrarComGitHub, usuarioAtual, montarCabecalho,
 } from "./app.js";
 
 const main = document.getElementById("conteudo");
@@ -72,7 +72,8 @@ async function telaPrincipal(perfil) {
     sb.from("tentativas").select("*").eq("aluno_id", perfil.id).order("iniciada_em", { ascending: false }),
   ]);
   if (error) toast("Erro ao carregar suas tentativas: " + error.message, "erro");
-  const abertas = new Map((tentativas || []).filter((t) => !t.finalizada_em).map((t) => [`${t.ano}-${t.modo}`, t]));
+  const abertas = new Map((tentativas || []).filter((t) => !t.finalizada_em)
+    .map((t) => [`${ehAleatoria(t) ? "aleatorio" : t.ano}-${t.modo}`, t]));
 
   const cartoes = [...provas].sort((a, b) => b.ano - a.ano).map((p) => {
     const sel = el("select", { "aria-label": "Modo" },
@@ -108,10 +109,41 @@ async function telaPrincipal(perfil) {
   main.replaceChildren(
     el("section", { class: "secao" },
       el("h1", {}, `Olá, ${(perfil.nome || "").split(" ")[0]}!`),
-      el("p", { class: "suave" }, "Escolha uma edição do ENADE. Suas respostas são salvas automaticamente: você pode parar e continuar depois.")),
-    el("section", { class: "secao grade" }, cartoes),
+      el("p", { class: "suave" }, "Faça um simulado aleatório ou escolha uma edição do ENADE. Suas respostas são salvas automaticamente: você pode parar e continuar depois.")),
+    el("section", { class: "secao grade" }, cartaoAleatorio(provas, abertas), cartoes),
     el("section", { class: "secao cartao" }, el("h2", {}, "Minhas tentativas"), tabelaTentativas(tentativas || []))
   );
+}
+
+// Cada aluno recebe questões sorteadas das edições, na estrutura da prova do ENADE
+function cartaoAleatorio(provas, abertas) {
+  const sel = el("select", { "aria-label": "Modo" },
+    Object.entries(MODOS).map(([k, m]) => el("option", { value: k }, m.nome)));
+  const btn = el("button", { class: "btn" }, "Gerar simulado");
+  const info = el("small");
+  const atualizarBotao = () => {
+    btn.textContent = abertas.get(`aleatorio-${sel.value}`) ? "Continuar" : "Gerar simulado";
+    const n = contagemAleatoria(sel.value);
+    info.textContent = `${n.objetivas} objetivas · ${n.discursivas} discursivas · tempo sugerido ${duracao(MODOS[sel.value].minutos)}`;
+  };
+  sel.addEventListener("change", atualizarBotao);
+  btn.addEventListener("click", async () => {
+    const aberta = abertas.get(`aleatorio-${sel.value}`);
+    if (aberta) return (location.href = `simulado.html?t=${aberta.id}`);
+    btn.disabled = true;
+    const { data, error } = await sb.from("tentativas")
+      .insert({ ano: null, modo: sel.value, questoes: sortearQuestoes(provas, sel.value) }).select().single();
+    if (error) { btn.disabled = false; return toast("Não foi possível gerar o simulado: " + error.message, "erro"); }
+    location.href = `simulado.html?t=${data.id}`;
+  });
+  atualizarBotao();
+  const anos = provas.map((p) => p.ano).sort();
+  return el("div", { class: "cartao prova" },
+    el("h3", {}, "Simulado aleatório"),
+    el("div", { class: "numeros" }, el("span", { class: "selo ok" }, "Novo a cada tentativa")),
+    el("p", { class: "obs" }, `Questões sorteadas das edições de ${anos[0]} a ${anos[anos.length - 1]}, ` +
+      "na mesma estrutura da prova do ENADE. Cada aluno recebe um simulado diferente. Questões anuladas ficam de fora."),
+    sel, el("div", { class: "linha" }, btn, el("span", { class: "espaco" })), info);
 }
 
 function tabelaTentativas(tentativas) {
@@ -129,7 +161,7 @@ function tabelaTentativas(tentativas) {
       } }, "Descartar"));
     }
     return el("tr", {},
-      el("td", {}, `ENADE ${t.ano}`),
+      el("td", {}, nomeProva(t)),
       el("td", {}, MODOS[t.modo]?.nome || t.modo),
       el("td", {}, dataHora(t.iniciada_em)),
       el("td", {}, t.finalizada_em ? el("span", { class: "selo ok" }, "Finalizada") : el("span", { class: "selo alerta" }, "Em andamento")),
