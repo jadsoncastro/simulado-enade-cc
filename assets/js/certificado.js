@@ -63,7 +63,7 @@ export async function emitirCertificado(t, perfil, provas) {
     : `com a prova da edição de ${t.ano}`;
   const texto = `concluiu o Simulado ENADE de Ciência da Computação (prova completa), ${prova}, ` +
     `em ${new Date(t.finalizada_em).toLocaleDateString("pt-BR")}, obtendo aproveitamento de ${numero(t.percentual)}% ` +
-    `nas questões objetivas (${t.acertos} acertos em ${t.total_objetivas} questões).`;
+    `nas questões objetivas (${t.acertos} acertos em ${t.total_objetivas} questões). Consideramos um total de 4 (quatro) horas de atividades.`;
   doc.setFontSize(12.5);
   doc.text(doc.splitTextToSize(texto, mm(900)), centro, mm(412), { align: "center", lineHeightFactor: 1.5 });
 
